@@ -5,13 +5,14 @@ from tkinter import filedialog, messagebox, scrolledtext
 
 # Expresiones regulares
 ER_PALABRA_BASICA=r"^[a-zñáéíóúü]+$"
-ER_PUNTUACION=r"^[.,;:¿?!¡]+$"
+ER_PUNTUACION=r"^[.,;:¿?!¡()]+$"
 ER_DIGITO=r"^[0-9]+$"
 
 def leer_CSV(ruta_archivo, separador):
     # Cargar el archivo CSV con el separador personalizado en un DataFrame
     df = pd.read_csv(ruta_archivo, delimiter=separador, usecols=['Frecuencia','Alfabético'])
 
+    # Estructura de datos para almacenar las palabras válidas (HASH)
     diccionario_palabras_validas = set()
 
     # Extraer la columna 'Frecuencia' y 'Alfabético' y convertirla en un conjunto para eliminar duplicados
@@ -66,29 +67,58 @@ def analizar_texto(palabras_validas, texto_entrada):
 #TKINTER
 def interfaz():
     print("interfaz papu")
-    RUTA_CSV = r"/Users/Andre/Documentos/1TareasUp/7moCuatri/Automatas/analizador-lexico-para-palabras-validas-en-espanol/palabras_espanol.csv"
-    palabras_validas = leer_CSV(RUTA_CSV, ",")
 
-# donde se hace la ventanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 
     root = tk.Tk()
-    root.title("Analizador Léxico ")
-    root.geometry("720x550")
+    root.title("Analizador Léxico")
+    root.geometry("750x600")
     root.resizable(False, False)
-    print("TOKEN".ljust(25), "LEXEMA")
-    print("-" * 50)
 
-    tk.Label(root, text="Ingrese el texto a analizar:").pack(pady=5)
+    # cariables de 
+    ruta_csv = tk.StringVar()
+    texto_cargado = tk.StringVar()
 
-    entrada_texto = scrolledtext.ScrolledText(root, width=80, height=8)
-    entrada_texto.pack()
+    # donde carga el csv
+    def cargar_csv():
+        ruta = filedialog.askopenfilename(
+            title="Seleccionar diccionario CSV",
+            filetypes=[("Archivos CSV", "*.csv")]
+        )
+        if ruta:
+            try:
+                ruta_csv.set(ruta)
+                messagebox.showinfo("CSV cargado", "Diccionario cargado correctamente.")
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo cargar el archivo CSV:\n{e}")
 
-    tk.Label(root, text="Resultado de tokens (Token - Lexema):").pack(pady=5)
-    salida_texto = scrolledtext.ScrolledText(root, width=80, height=15)
+    tk.Label(root, text="Cargar diccionario CSV:").pack(pady=3)
+    tk.Button(root, text="Seleccionar CSV", command=cargar_csv, width=20).pack(pady=5)
+
+    # carga el txttttttt
+    def cargar_archivo_txt():
+        ruta = filedialog.askopenfilename(
+            title="Seleccionar archivo TXT a analizar",
+            filetypes=[("Archivos de texto", "*.txt")]
+        )
+        if ruta:
+            try:
+                with open(ruta, "r", encoding="utf-8") as f:
+                    contenido = f.read()
+                    texto_cargado.set(contenido)
+                messagebox.showinfo("TXT cargado", "Texto cargado correctamente.")
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo leer el archivo TXT:\n{e}")
+
+    tk.Label(root, text="Cargar archivo TXT para análisis:").pack(pady=3)
+    tk.Button(root, text="Seleccionar TXT", command=cargar_archivo_txt, width=20).pack(pady=5)
+
+    # el resultaooooo
+    tk.Label(root, text="Resultado de tokens (TOKEN - LEXEMA):").pack(pady=5)
+    salida_texto = scrolledtext.ScrolledText(root, width=90, height=22)
     salida_texto.pack()
 
+    # tablaaaaaa
     def convertir_a_tabla(diccionario_tokens, texto_original):
         tabla = []
-
         tokens_ordenados = tokenizar(texto_original)
 
         for palabra in tokens_ordenados:
@@ -103,34 +133,36 @@ def interfaz():
 
         return tabla
 
-
-#boton 
+    # analizar
     def ejecutar_analisis():
-        texto = entrada_texto.get("1.0", tk.END).strip()
-
-        if texto == "":
-            messagebox.showwarning("Escriba un texto para analizar.")
+        if ruta_csv.get() == "":
+            messagebox.showwarning("Falta el CSV", "Primero carga el archivo CSV del diccionario.")
             return
 
-        resultado_diccionario = analizar_texto(palabras_validas, texto)
+        if texto_cargado.get().strip() == "":
+            messagebox.showwarning("Falta el TXT", "Primero carga un archivo TXT.")
+            return
 
-# limpiar 
+        # carga el diccion
+        palabras_validas = leer_CSV(ruta_csv.get(), ",")
+
+        # analiza txt
+        resultado_diccionario = analizar_texto(palabras_validas, texto_cargado.get())
+
         salida_texto.delete("1.0", tk.END)
 
-# encabezado
         salida_texto.insert(tk.END, "TOKEN".ljust(28) + "LEXEMA\n")
-        salida_texto.insert(tk.END, "-" * 50 + "\n")
+        salida_texto.insert(tk.END, "-" * 60 + "\n")
 
-        tabla = convertir_a_tabla(resultado_diccionario, texto)
+        tabla = convertir_a_tabla(resultado_diccionario, texto_cargado.get())
 
         for token, lexema in tabla:
             salida_texto.insert(tk.END, f"{token.ljust(28)}{lexema}\n")
 
-
-
-    tk.Button(root, text="Analizar texto", command=ejecutar_analisis, width=20).pack(pady=10)
+    tk.Button(root, text="Analizar archivo", command=ejecutar_analisis, width=20).pack(pady=10)
 
     root.mainloop()
+
 
 def main():
     palabras_validas = leer_CSV(r'/Users/Andre/Documentos/1TareasUp/7moCuatri/Automatas/analizador-lexico-para-palabras-validas-en-espanol/palabras_espanol.csv', ',') 
